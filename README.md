@@ -23,7 +23,7 @@ To use this plugin in Rivet:
 
    ```ts
    import * as Rivet from "@ironclad/rivet";
-   import RivetPluginQdrant from "@qdrant/rivet-plugin-qdrant";
+   import RivetPluginQdrant from "rivet-plugin-qdrant";
    ```
 
 2. Initialize the plugin and register the nodes with the `globalRivetNodeRegistry`:

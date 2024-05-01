@@ -1,9 +1,16 @@
 {
   "name": "rivet-plugin-qdrant",
   "packageManager": "yarn@3.5.0",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "dist/bundle.js",
+  "repository": "https://github.com/qdrant/rivet-plugin-qdrant",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "https://github.com/qdrant/rivet-plugin-qdrant/LICENSE"
+    }
+  ],
   "files": [
     "dist"
   ],
