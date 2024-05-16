@@ -4,6 +4,9 @@ import { listCollectionsNode } from "./nodes/ListCollectionsNode";
 import { uploadPointNode } from "./nodes/UploadPointNode";
 import { searchPointsNode } from "./nodes/SearchPointsNode";
 import { deletePointNode } from "./nodes/DeleteCollectionNode";
+import { getPointsNode } from "./nodes/GetPointsNode";
+import { scrollPointsNode } from "./nodes/ScrollPointsNode";
+import { deletePointsNode } from "./nodes/DeletePointsNode";
 
 const initializer: RivetPluginInitializer = (rivet) => {
 
@@ -42,6 +45,9 @@ const initializer: RivetPluginInitializer = (rivet) => {
       register(uploadPointNode(rivet));
       register(searchPointsNode(rivet));
       register(deletePointNode(rivet));
+      register(getPointsNode(rivet));
+      register(scrollPointsNode(rivet));
+      register(deletePointsNode(rivet));
     },
   };
 

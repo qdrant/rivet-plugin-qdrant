@@ -259,9 +259,9 @@ function searchPointsNode(rivet) {
     getOutputDefinitions() {
       return [
         {
-          id: "status",
-          dataType: "string",
-          title: "Status"
+          id: "points",
+          dataType: "object[]",
+          title: "Points"
         }
       ];
     },
@@ -347,7 +347,7 @@ function searchPointsNode(rivet) {
       };
     }
   };
-  return rivet.pluginNodeDefinition(impl, "Upload Point");
+  return rivet.pluginNodeDefinition(impl, "Search Points");
 }
 
 // src/nodes/DeleteCollectionNode.ts
@@ -440,6 +440,346 @@ function deletePointNode(rivet) {
   return rivet.pluginNodeDefinition(impl, "Delete Collection");
 }
 
+// src/nodes/GetPointsNode.ts
+function getPointsNode(rivet) {
+  const impl = {
+    create() {
+      const node = {
+        id: rivet.newId(),
+        data: {
+          collectionName: "",
+          useCollectionNameInput: false,
+          ids: [],
+          useIdsInput: false
+        },
+        title: "Get Points",
+        type: "getPoints",
+        visualData: {
+          x: 0,
+          y: 0,
+          width: 200
+        }
+      };
+      return node;
+    },
+    getInputDefinitions(data) {
+      const inputs = [];
+      if (data.useCollectionNameInput) {
+        inputs.push({
+          id: "collectionName",
+          dataType: "string",
+          title: "Collection Name"
+        });
+      }
+      if (data.useIdsInput) {
+        inputs.push({
+          id: "ids",
+          dataType: "object[]",
+          title: "Point IDs"
+        });
+      }
+      return inputs;
+    },
+    getOutputDefinitions() {
+      return [
+        {
+          id: "points",
+          dataType: "object[]",
+          title: "Points"
+        }
+      ];
+    },
+    getBody(data) {
+      return rivet.dedent`
+              Collection: ${data.useCollectionNameInput ? "(From Input)" : data.collectionName}
+            `;
+    },
+    getEditors(data) {
+      return [
+        {
+          type: "string",
+          label: "Collection Name",
+          dataKey: "collectionName",
+          useInputToggleDataKey: "useCollectionNameInput",
+          helperMessage: "The collection to add the item to."
+        },
+        {
+          type: "anyData",
+          dataKey: "ids",
+          label: "Point IDs",
+          useInputToggleDataKey: "useIdsInput",
+          helperMessage: "The list of points IDs to retrieve."
+        }
+      ];
+    },
+    getUIData() {
+      return {
+        contextMenuTitle: "Get Points",
+        infoBoxTitle: "Get Points",
+        infoBoxBody: "Retrieves points from a collection.",
+        group: "Qdrant"
+      };
+    },
+    async process(data, inputData, context) {
+      if (context.executor !== "nodejs") {
+        throw new Error("This node can only be run using a nodejs executor.");
+      }
+      const collectionName = rivet.getInputOrData(
+        data,
+        inputData,
+        "collectionName"
+      );
+      const ids = rivet.getInputOrData(data, inputData, "ids", "any[]");
+      const { getPoints } = await import("../dist/nodeEntry.cjs");
+      const results = await getPoints(
+        context.getPluginConfig("qdrantUrl"),
+        collectionName,
+        ids,
+        context.getPluginConfig("qdrantApiKey")
+      ) || [];
+      return {
+        ["points"]: {
+          type: "object[]",
+          value: results
+        }
+      };
+    }
+  };
+  return rivet.pluginNodeDefinition(impl, "Get Points");
+}
+
+// src/nodes/ScrollPointsNode.ts
+function scrollPointsNode(rivet) {
+  const impl = {
+    create() {
+      const node = {
+        id: rivet.newId(),
+        data: {
+          collectionName: "",
+          useCollectionNameInput: false,
+          limit: 10,
+          offset: void 0,
+          filter: {},
+          useFilterInput: false
+        },
+        title: "Scroll Points",
+        type: "scrollPoints",
+        visualData: {
+          x: 0,
+          y: 0,
+          width: 200
+        }
+      };
+      return node;
+    },
+    getInputDefinitions(data) {
+      const inputs = [];
+      if (data.useCollectionNameInput) {
+        inputs.push({
+          id: "collectionName",
+          dataType: "string",
+          title: "Collection Name"
+        });
+      }
+      if (data.useFilterInput) {
+        inputs.push({
+          id: "filter",
+          dataType: "object",
+          title: "Scroll Filter"
+        });
+      }
+      return inputs;
+    },
+    getOutputDefinitions() {
+      return [
+        {
+          id: "points",
+          dataType: "object[]",
+          title: "Points"
+        }
+      ];
+    },
+    getBody(data) {
+      return rivet.dedent`
+              Collection: ${data.useCollectionNameInput ? "(From Input)" : data.collectionName}
+            `;
+    },
+    getEditors(data) {
+      return [
+        {
+          type: "string",
+          label: "Collection Name",
+          dataKey: "collectionName",
+          useInputToggleDataKey: "useCollectionNameInput",
+          helperMessage: "The collection to add the item to."
+        },
+        {
+          type: "number",
+          dataKey: "limit",
+          label: "Number of Results",
+          helperMessage: "The number of results to return. Defaults to 10."
+        },
+        {
+          type: "anyData",
+          dataKey: "offset",
+          label: "Offset point ID",
+          helperMessage: "The ID of the point to start from"
+        },
+        {
+          type: "anyData",
+          dataKey: "filter",
+          label: "Scroll Filter",
+          useInputToggleDataKey: "useFilterInput",
+          helperMessage: "Filter to apply during scroll."
+        }
+      ];
+    },
+    getUIData() {
+      return {
+        contextMenuTitle: "Scroll Points",
+        infoBoxTitle: "Scroll Points",
+        infoBoxBody: "Scroll for points in a Qdrant collection.",
+        group: "Qdrant"
+      };
+    },
+    async process(data, inputData, context) {
+      if (context.executor !== "nodejs") {
+        throw new Error("This node can only be run using a nodejs executor.");
+      }
+      const collectionName = rivet.getInputOrData(
+        data,
+        inputData,
+        "collectionName"
+      );
+      const filter = JSON.parse(rivet.getInputOrData(data, inputData, "filter")) || {};
+      const { scrollPoints } = await import("../dist/nodeEntry.cjs");
+      const results = await scrollPoints(
+        context.getPluginConfig("qdrantUrl"),
+        collectionName,
+        filter,
+        data.limit,
+        data.offset,
+        context.getPluginConfig("qdrantApiKey")
+      ) || [];
+      return {
+        ["points"]: {
+          type: "object[]",
+          value: results
+        }
+      };
+    }
+  };
+  return rivet.pluginNodeDefinition(impl, "Scroll Points");
+}
+
+// src/nodes/DeletePointsNode.ts
+function deletePointsNode(rivet) {
+  const impl = {
+    create() {
+      const node = {
+        id: rivet.newId(),
+        data: {
+          collectionName: "",
+          useCollectionNameInput: false,
+          filter: {},
+          useFilterInput: false
+        },
+        title: "Delete Points",
+        type: "deletePoints",
+        visualData: {
+          x: 0,
+          y: 0,
+          width: 200
+        }
+      };
+      return node;
+    },
+    getInputDefinitions(data) {
+      const inputs = [];
+      if (data.useCollectionNameInput) {
+        inputs.push({
+          id: "collectionName",
+          dataType: "string",
+          title: "Collection Name"
+        });
+      }
+      if (data.useFilterInput) {
+        inputs.push({
+          id: "filter",
+          dataType: "object",
+          title: "Delete Filter"
+        });
+      }
+      return inputs;
+    },
+    getOutputDefinitions() {
+      return [
+        {
+          id: "status",
+          dataType: "string",
+          title: "Status"
+        }
+      ];
+    },
+    getBody(data) {
+      return rivet.dedent`
+              Collection: ${data.useCollectionNameInput ? "(From Input)" : data.collectionName}
+            `;
+    },
+    getEditors(data) {
+      return [
+        {
+          type: "string",
+          label: "Collection Name",
+          dataKey: "collectionName",
+          useInputToggleDataKey: "useCollectionNameInput",
+          helperMessage: "The collection to add the item to."
+        },
+        {
+          type: "anyData",
+          dataKey: "filter",
+          label: "Delete Filter",
+          useInputToggleDataKey: "useFilterInput",
+          helperMessage: "Filter to apply during delete."
+        }
+      ];
+    },
+    getUIData() {
+      return {
+        contextMenuTitle: "Delete",
+        infoBoxTitle: "Delete Points",
+        infoBoxBody: "Delete points in a Qdrant collection.",
+        group: "Qdrant"
+      };
+    },
+    async process(data, inputData, context) {
+      if (context.executor !== "nodejs") {
+        throw new Error("This node can only be run using a nodejs executor.");
+      }
+      const collectionName = rivet.getInputOrData(
+        data,
+        inputData,
+        "collectionName"
+      );
+      const filter = JSON.parse(rivet.getInputOrData(data, inputData, "filter")) || {};
+      const { deletePoints } = await import("../dist/nodeEntry.cjs");
+      const result = await deletePoints(
+        context.getPluginConfig("qdrantUrl"),
+        collectionName,
+        filter,
+        context.getPluginConfig("qdrantApiKey")
+      ) || [];
+      return {
+        ["status"]: {
+          type: "string",
+          value: result
+        }
+      };
+    }
+  };
+  return rivet.pluginNodeDefinition(impl, "Delete Points");
+}
+
 // src/index.ts
 var initializer = (rivet) => {
   const plugin = {
@@ -473,6 +813,9 @@ var initializer = (rivet) => {
       register(uploadPointNode(rivet));
       register(searchPointsNode(rivet));
       register(deletePointNode(rivet));
+      register(getPointsNode(rivet));
+      register(scrollPointsNode(rivet));
+      register(deletePointsNode(rivet));
     }
   };
   return plugin;
