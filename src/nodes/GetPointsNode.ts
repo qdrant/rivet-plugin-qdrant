@@ -8,32 +8,28 @@ import type {
     NodeId,
 } from "@ironclad/rivet-core";
 
-export type SearchPointsNode = ChartNode<"searchPoints", {
+export type GetPointsNode = ChartNode<"getPoints", {
 
     collectionName: string;
     useCollectionNameInput?: boolean;
 
-    vectorName?: string;
-    limit?: number;
-    scoreThreshold?: number;
-
-    filter: Record<string, any>;
-    useFilterInput?: boolean;
+    ids: any[];
+    useIdsInput: boolean;
 }>;
 
-export function searchPointsNode(rivet: typeof Rivet) {
-    const impl: PluginNodeImpl<SearchPointsNode> = {
-        create(): SearchPointsNode {
-            const node: SearchPointsNode = {
+export function getPointsNode(rivet: typeof Rivet) {
+    const impl: PluginNodeImpl<GetPointsNode> = {
+        create(): GetPointsNode {
+            const node: GetPointsNode = {
                 id: rivet.newId<NodeId>(),
                 data: {
                     collectionName: "",
                     useCollectionNameInput: false,
-                    filter: {},
-                    useFilterInput: false,
+                    ids: [],
+                    useIdsInput: false,
                 },
-                title: "Search Points",
-                type: "searchPoints",
+                title: "Get Points",
+                type: "getPoints",
                 visualData: {
                     x: 0,
                     y: 0,
@@ -54,17 +50,11 @@ export function searchPointsNode(rivet: typeof Rivet) {
                 });
             }
 
-            inputs.push({
-                id: "embedding" as PortId,
-                dataType: "vector",
-                title: "Embedding",
-            });
-
-            if (data.useFilterInput) {
+            if (data.useIdsInput) {
                 inputs.push({
-                    id: "filter" as PortId,
-                    dataType: "object",
-                    title: "Search Filter",
+                    id: "ids" as PortId,
+                    dataType: "object[]",
+                    title: "Point IDs",
                 });
             }
 
@@ -98,38 +88,20 @@ export function searchPointsNode(rivet: typeof Rivet) {
                     helperMessage: "The collection to add the item to.",
                 },
                 {
-                    type: "string",
-                    dataKey: "vectorName",
-                    label: "Vector Name",
-                    helperMessage: "The name of the vector. Uses the default unnamed('') vector if not provided.",
-                },
-                {
-                    type: "number",
-                    dataKey: "limit",
-                    label: "Number of Results",
-                    helperMessage: "The number of results to return. Defaults to 10.",
-                },
-                {
-                    type: "number",
-                    dataKey: "scoreThreshold",
-                    label: "Score Threshold",
-                    helperMessage: "The minimum score for a result to be returned. Defaults to 0",
-                },
-                {
                     type: "anyData",
-                    dataKey: "filter",
-                    label: "Search Filter",
-                    useInputToggleDataKey: "useFilterInput",
-                    helperMessage: "Filter to apply during search.",
+                    dataKey: "ids",
+                    label: "Point IDs",
+                    useInputToggleDataKey: "useIdsInput",
+                    helperMessage: "The list of points IDs to retrieve.",
                 },
             ];
         },
 
         getUIData() {
             return {
-                contextMenuTitle: "Search",
-                infoBoxTitle: "Search",
-                infoBoxBody: "Search for points in a Qdrant collection.",
+                contextMenuTitle: "Get Points",
+                infoBoxTitle: "Get Points",
+                infoBoxBody: "Retrieves points from a collection.",
                 group: "Qdrant",
             };
         },
@@ -144,24 +116,14 @@ export function searchPointsNode(rivet: typeof Rivet) {
                 inputData,
                 "collectionName"
             );
+            const ids = rivet.getInputOrData(data, inputData, "ids", "any[]");
 
-            const embedding = rivet.coerceType(
-                inputData["embedding" as PortId],
-                "vector"
-            );
+            const { getPoints } = await import("../nodeEntry");
 
-            const filter = JSON.parse(rivet.getInputOrData(data, inputData, "filter")) || {};
-
-            const { searchPoints } = await import("../nodeEntry");
-
-            const results = await searchPoints(
+            const results = await getPoints(
                 context.getPluginConfig("qdrantUrl") as string,
                 collectionName,
-                embedding,
-                filter,
-                data.limit,
-                data.scoreThreshold,
-                data.vectorName,
+                ids,
                 context.getPluginConfig("qdrantApiKey")
             ) || [];
 
@@ -174,5 +136,5 @@ export function searchPointsNode(rivet: typeof Rivet) {
         },
     };
 
-    return rivet.pluginNodeDefinition(impl, "Search Points");
+    return rivet.pluginNodeDefinition(impl, "Get Points");
 }

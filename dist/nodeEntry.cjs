@@ -17048,7 +17048,10 @@ var require_undici = __commonJS({
 var nodeEntry_exports = {};
 __export(nodeEntry_exports, {
   deleteCollection: () => deleteCollection,
+  deletePoints: () => deletePoints,
+  getPoints: () => getPoints,
   listCollections: () => listCollections,
+  scrollPoints: () => scrollPoints,
   searchPoints: () => searchPoints,
   upsertPoint: () => upsertPoint
 });
@@ -19071,10 +19074,57 @@ async function deleteCollection(url, collectionName, apiKey) {
   const response = await client.deleteCollection(collectionName);
   return response;
 }
+async function getPoints(url, collectionName, ids, apiKey) {
+  const client = new QdrantClient({ url, apiKey });
+  const parsedIds = ids.map((id) => {
+    if (typeof id === "string" || typeof id === "number") {
+      return id;
+    }
+    throw new Error(`Invalid ID type: ${typeof id}. Can only be string or number.`);
+  });
+  const response = await client.retrieve(collectionName, {
+    ids: parsedIds,
+    with_payload: true,
+    with_vector: true
+  });
+  return response.map((point) => ({
+    id: point.id,
+    payload: point.payload,
+    vector: point.vector
+  }));
+}
+async function scrollPoints(url, collectionName, filter, limit, offset, apiKey) {
+  const client = new QdrantClient({ url, apiKey });
+  if (typeof offset !== "string" && typeof offset !== "number") {
+    throw new Error(`Invalid offset type: ${typeof offset}. Can only be string or number.`);
+  }
+  const response = await client.scroll(collectionName, {
+    filter,
+    limit,
+    offset,
+    with_payload: true,
+    with_vector: true
+  });
+  return response.points.map((point) => ({
+    id: point.id,
+    payload: point.payload,
+    vector: point.vector
+  }));
+}
+async function deletePoints(url, collectionName, filter, apiKey) {
+  const client = new QdrantClient({ url, apiKey });
+  const response = await client.delete(collectionName, {
+    filter
+  });
+  return response.status;
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   deleteCollection,
+  deletePoints,
+  getPoints,
   listCollections,
+  scrollPoints,
   searchPoints,
   upsertPoint
 });

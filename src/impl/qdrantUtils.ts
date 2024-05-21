@@ -87,3 +87,74 @@ export async function deleteCollection(
 
   return response
 }
+
+export async function getPoints(
+  url: string,
+  collectionName: string,
+  ids: unknown[],
+  apiKey?: string,
+) {
+  const client = new QdrantClient({ url, apiKey });
+
+  const parsedIds = ids.map((id) => {
+    if (typeof id === 'string' || typeof id === 'number') {
+      return id;
+    }
+    throw new Error(`Invalid ID type: ${typeof id}. Can only be string or number.`);
+  });
+
+  const response = await client.retrieve(collectionName, {
+    ids: parsedIds,
+    with_payload: true,
+    with_vector: true,
+  });
+
+  return response.map((point) => ({
+    id: point.id,
+    payload: point.payload,
+    vector: point.vector
+  }));
+}
+
+export async function scrollPoints(
+  url: string,
+  collectionName: string,
+  filter: Record<string, any>,
+  limit?: number,
+  offset?: string | number,
+  apiKey?: string,
+) {
+  const client = new QdrantClient({ url, apiKey });
+
+  if (typeof offset !== 'string' && typeof offset !== 'number') {
+    throw new Error(`Invalid offset type: ${typeof offset}. Can only be string or number.`);
+  }
+
+  const response = await client.scroll(collectionName, {
+    filter,
+    limit,
+    offset,
+    with_payload: true,
+    with_vector: true,
+  });
+
+  return response.points.map((point) => ({
+    id: point.id,
+    payload: point.payload,
+    vector: point.vector
+  }));
+}
+export async function deletePoints(
+  url: string,
+  collectionName: string,
+  filter: Record<string, any>,
+  apiKey?: string,
+) {
+  const client = new QdrantClient({ url, apiKey });
+  
+  const response = await client.delete(collectionName, {
+    filter,
+  });
+
+  return response.status;
+}

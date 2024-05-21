@@ -8,32 +8,35 @@ import type {
     NodeId,
 } from "@ironclad/rivet-core";
 
-export type SearchPointsNode = ChartNode<"searchPoints", {
+export type ScrollPointsNode = ChartNode<"scrollPoints", {
 
     collectionName: string;
     useCollectionNameInput?: boolean;
 
-    vectorName?: string;
     limit?: number;
-    scoreThreshold?: number;
+    offset?: string | number;
 
-    filter: Record<string, any>;
+    filter?: Record<string, any>;
     useFilterInput?: boolean;
 }>;
 
-export function searchPointsNode(rivet: typeof Rivet) {
-    const impl: PluginNodeImpl<SearchPointsNode> = {
-        create(): SearchPointsNode {
-            const node: SearchPointsNode = {
+export function scrollPointsNode(rivet: typeof Rivet) {
+    const impl: PluginNodeImpl<ScrollPointsNode> = {
+        create(): ScrollPointsNode {
+            const node: ScrollPointsNode = {
                 id: rivet.newId<NodeId>(),
                 data: {
                     collectionName: "",
                     useCollectionNameInput: false,
-                    filter: {},
+
+                    limit: 10,
+                    offset: undefined,
+
+                    filter: undefined,
                     useFilterInput: false,
                 },
-                title: "Search Points",
-                type: "searchPoints",
+                title: "Scroll Points",
+                type: "scrollPoints",
                 visualData: {
                     x: 0,
                     y: 0,
@@ -54,17 +57,11 @@ export function searchPointsNode(rivet: typeof Rivet) {
                 });
             }
 
-            inputs.push({
-                id: "embedding" as PortId,
-                dataType: "vector",
-                title: "Embedding",
-            });
-
             if (data.useFilterInput) {
                 inputs.push({
                     id: "filter" as PortId,
                     dataType: "object",
-                    title: "Search Filter",
+                    title: "Scroll Filter",
                 });
             }
 
@@ -98,38 +95,32 @@ export function searchPointsNode(rivet: typeof Rivet) {
                     helperMessage: "The collection to add the item to.",
                 },
                 {
-                    type: "string",
-                    dataKey: "vectorName",
-                    label: "Vector Name",
-                    helperMessage: "The name of the vector. Uses the default unnamed('') vector if not provided.",
-                },
-                {
                     type: "number",
                     dataKey: "limit",
                     label: "Number of Results",
                     helperMessage: "The number of results to return. Defaults to 10.",
                 },
                 {
-                    type: "number",
-                    dataKey: "scoreThreshold",
-                    label: "Score Threshold",
-                    helperMessage: "The minimum score for a result to be returned. Defaults to 0",
+                    type: "anyData",
+                    dataKey: "offset",
+                    label: "Offset point ID",
+                    helperMessage: "The ID of the point to start from",
                 },
                 {
                     type: "anyData",
                     dataKey: "filter",
-                    label: "Search Filter",
+                    label: "Scroll Filter",
                     useInputToggleDataKey: "useFilterInput",
-                    helperMessage: "Filter to apply during search.",
+                    helperMessage: "Filter to apply during scroll.",
                 },
             ];
         },
 
         getUIData() {
             return {
-                contextMenuTitle: "Search",
-                infoBoxTitle: "Search",
-                infoBoxBody: "Search for points in a Qdrant collection.",
+                contextMenuTitle: "Scroll Points",
+                infoBoxTitle: "Scroll Points",
+                infoBoxBody: "Scroll for points in a Qdrant collection.",
                 group: "Qdrant",
             };
         },
@@ -145,23 +136,16 @@ export function searchPointsNode(rivet: typeof Rivet) {
                 "collectionName"
             );
 
-            const embedding = rivet.coerceType(
-                inputData["embedding" as PortId],
-                "vector"
-            );
-
             const filter = JSON.parse(rivet.getInputOrData(data, inputData, "filter")) || {};
 
-            const { searchPoints } = await import("../nodeEntry");
+            const { scrollPoints } = await import("../nodeEntry");
 
-            const results = await searchPoints(
+            const results = await scrollPoints(
                 context.getPluginConfig("qdrantUrl") as string,
                 collectionName,
-                embedding,
                 filter,
                 data.limit,
-                data.scoreThreshold,
-                data.vectorName,
+                data.offset,
                 context.getPluginConfig("qdrantApiKey")
             ) || [];
 
@@ -174,5 +158,5 @@ export function searchPointsNode(rivet: typeof Rivet) {
         },
     };
 
-    return rivet.pluginNodeDefinition(impl, "Search Points");
+    return rivet.pluginNodeDefinition(impl, "Scroll Points");
 }
