@@ -17,6 +17,9 @@ To use this plugin in Rivet:
 2. Search for "rivet-plugin-qdrant".
 3. Click the "Install" button to install the plugin in your current project.
 
+<img width="910" alt="installation" src="https://github.com/qdrant/rivet-plugin-qdrant/assets/46051506/0509be17-dcbb-4ad5-8c0a-91d82b81e9c2">
+
+
 ### In the SDK
 
 1. Import the plugin and Rivet into your project:
