@@ -16,7 +16,7 @@ export type ScrollPointsNode = ChartNode<"scrollPoints", {
     limit?: number;
     offset?: string | number;
 
-    filter: Record<string, any>;
+    filter?: Record<string, any>;
     useFilterInput?: boolean;
 }>;
 
@@ -32,7 +32,7 @@ export function scrollPointsNode(rivet: typeof Rivet) {
                     limit: 10,
                     offset: undefined,
 
-                    filter: {},
+                    filter: undefined,
                     useFilterInput: false,
                 },
                 title: "Scroll Points",

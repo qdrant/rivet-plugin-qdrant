@@ -1,5 +1,5 @@
 {
-  "name": "rivet-plugin-qdrantt",
+  "name": "rivet-plugin-qdrant",
   "packageManager": "yarn@3.5.0",
   "version": "0.0.2",
   "type": "module",

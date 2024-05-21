@@ -559,7 +559,7 @@ function scrollPointsNode(rivet) {
           useCollectionNameInput: false,
           limit: 10,
           offset: void 0,
-          filter: {},
+          filter: void 0,
           useFilterInput: false
         },
         title: "Scroll Points",
