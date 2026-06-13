@@ -26,7 +26,7 @@
     "@qdrant/js-client-rest": "^1.8.1"
   },
   "devDependencies": {
-    "esbuild": "^0.19.2",
+    "esbuild": "^0.28.1",
     "npm-run-all": "^4.1.5",
     "recursive-copy": "^2.0.14",
     "tsx": "^3.12.10",
