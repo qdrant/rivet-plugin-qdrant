@@ -820,7 +820,7 @@ var initializer = (rivet) => {
   };
   return plugin;
 };
-var src_default = initializer;
+var index_default = initializer;
 export {
-  src_default as default
+  index_default as default
 };
